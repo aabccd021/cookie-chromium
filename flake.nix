@@ -9,7 +9,42 @@
   outputs = { self, nixpkgs, treefmt-nix }:
     let
 
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      overlay = (final: prev:
+        let
+          generated = import ./generated {
+            pkgs = final;
+            system = "x86_64-linux";
+            nodejs = final.nodejs;
+          };
+        in
+        {
+
+          cookie-chromium = final.writeShellApplication {
+            name = "cookie-chromium";
+            runtimeEnv.NODE_PATH = "${generated.nodeDependencies}/lib/node_modules";
+            runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers-chromium;
+            text = ''
+              exec ${final.bun}/bin/bun run ${./index.ts} "$@"
+            '';
+          };
+
+
+        });
+
+      pkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [ overlay ];
+      };
+
+
+      generated = import ./generated {
+        pkgs = pkgs;
+        system = "x86_64-linux";
+        nodejs = pkgs.nodejs;
+      };
+
+
+
 
       lib = pkgs.lib;
 
@@ -26,20 +61,6 @@
         settings.global.excludes = [ "LICENSE" "generated/**" ];
       };
 
-      generated = import ./generated {
-        pkgs = pkgs;
-        system = "x86_64-linux";
-        nodejs = pkgs.nodejs_23;
-      };
-
-      cookie-chromium = pkgs.writeShellApplication {
-        name = "cookie-chromium";
-        runtimeEnv.NODE_PATH = "${generated.nodeDependencies}/lib/node_modules";
-        runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = pkgs.playwright.browsers-chromium;
-        text = ''
-          exec ${pkgs.bun}/bin/bun run ${./index.ts} "$@"
-        '';
-      };
 
       updateDependencies = pkgs.writeShellApplication {
         name = "update-dependencies";
@@ -81,8 +102,8 @@
         nodeDependencies = generated.nodeDependencies;
         typecheck = typecheck;
         lintCheck = lintCheck;
-        cookie-chromium = cookie-chromium;
-        default = cookie-chromium;
+        cookie-chromium = pkgs.cookie-chromium;
+        default = pkgs.cookie-chromium;
       };
 
       gcroot = packages // {
@@ -94,6 +115,7 @@
       packages.x86_64-linux = gcroot;
       checks.x86_64-linux = gcroot;
       formatter.x86_64-linux = treefmtEval.config.build.wrapper;
+      overlays.default = overlay;
 
       apps.x86_64-linux.fix = {
         type = "app";
