@@ -11,6 +11,8 @@
 
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
 
+      lib = pkgs.lib;
+
       treefmtEval = treefmt-nix.lib.evalModule pkgs {
         projectRootFile = "flake.nix";
         programs.nixpkgs-fmt.enable = true;
@@ -46,10 +48,20 @@
         '';
       };
 
+
+      typecheck = pkgs.runCommandLocal "cookie_browser_typecheck" { } ''
+        cp -Lr ${generated.nodeDependencies}/lib/node_modules ./node_modules
+        cp -L ${./tsconfig.json} ./tsconfig.json
+        cp -L ${./index.ts} ./index.ts
+        ${pkgs.typescript}/bin/tsc
+        touch "$out"
+      '';
+
       packages = {
         formatting = treefmtEval.config.build.check self;
         # tailwindcss = tailwindcss;
         default = generated.package;
+        typecheck = typecheck;
       };
 
       gcroot = packages // {
@@ -64,7 +76,7 @@
 
       apps.x86_64-linux.fix = {
         type = "app";
-        program = "${updateDependencies}/bin/update-dependencies";
+        program = lib.getExe updateDependencies;
       };
 
     };

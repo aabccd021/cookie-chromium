@@ -1,6 +1,5 @@
 {
 	"compilerOptions": {
-		"allowImportingTsExtensions": true,
 		"allowUnreachableCode": false,
 		"allowUnusedLabels": false,
 		"lib": ["ESNext"],
