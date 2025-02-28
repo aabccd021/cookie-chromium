@@ -18,7 +18,6 @@
           };
         in
         {
-
           cookie-chromium = final.writeShellApplication {
             name = "cookie-chromium";
             runtimeEnv.NODE_PATH = "${generated.nodeDependencies}/lib/node_modules";
@@ -27,8 +26,6 @@
               exec ${final.bun}/bin/bun run ${./index.ts} "$@"
             '';
           };
-
-
         });
 
       pkgs = import nixpkgs {
@@ -42,9 +39,6 @@
         system = "x86_64-linux";
         nodejs = pkgs.nodejs;
       };
-
-
-
 
       lib = pkgs.lib;
 
