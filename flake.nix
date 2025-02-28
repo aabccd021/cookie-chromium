@@ -15,8 +15,11 @@
         projectRootFile = "flake.nix";
         programs.nixpkgs-fmt.enable = true;
         programs.prettier.enable = true;
+        programs.biome.enable = true;
         programs.shfmt.enable = true;
         programs.shellcheck.enable = true;
+        settings.formatter.prettier.priority = 1;
+        settings.formatter.biome.priority = 2;
         settings.formatter.shellcheck.options = [ "-s" "sh" ];
         settings.global.excludes = [ "LICENSE" "generated/**" ];
       };
