@@ -33,7 +33,7 @@
       };
 
       cookie-chromium = pkgs.writeShellApplication {
-        name = "cookie_browser";
+        name = "cookie-chromium";
         runtimeInputs = [ pkgs.nodejs ];
         runtimeEnv.NODE_PATH = "${generated.nodeDependencies}/lib/node_modules";
         runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = pkgs.playwright.browsers-chromium;
@@ -87,6 +87,11 @@
       apps.x86_64-linux.fix = {
         type = "app";
         program = lib.getExe updateDependencies;
+      };
+
+      apps.x86_64-linux.default = {
+        type = "app";
+        program = lib.getExe packages.default;
       };
 
     };
