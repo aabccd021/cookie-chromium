@@ -49,7 +49,6 @@
         '';
       };
 
-
       typecheck = pkgs.runCommandLocal "cookie_browser_typecheck" { } ''
         cp -Lr ${generated.nodeDependencies}/lib/node_modules ./node_modules
         cp -L ${./tsconfig.json} ./tsconfig.json

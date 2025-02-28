@@ -40,15 +40,6 @@ let
         sha512 = "ra9fsNWayuYumt+NiM069M6OkcRb1FZSK8bgi66AtpFoWkg2+y0bJSNmkFrWhMbEBbVKC/EruAHH3g0zmtwGmQ==";
       };
     };
-    "typescript-5.7.3" = {
-      name = "typescript";
-      packageName = "typescript";
-      version = "5.7.3";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/typescript/-/typescript-5.7.3.tgz";
-        sha512 = "84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw==";
-      };
-    };
     "undici-types-6.19.8" = {
       name = "undici-types";
       packageName = "undici-types";
@@ -68,7 +59,6 @@ let
       sources."fsevents-2.3.2"
       sources."playwright-1.50.1"
       sources."playwright-core-1.50.1"
-      sources."typescript-5.7.3"
       sources."undici-types-6.19.8"
     ];
     buildInputs = globalBuildInputs;
