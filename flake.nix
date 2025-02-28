@@ -66,10 +66,21 @@
         touch "$out"
       '';
 
+      lintCheck = pkgs.runCommandLocal "lintCheck" { } ''
+        cp -Lr ${./index.ts} ./index.ts
+        cp -Lr ${generated.nodeDependencies}/lib/node_modules ./node_modules
+        cp -L ${./biome.jsonc} ./biome.jsonc
+        cp -L ${./tsconfig.json} ./tsconfig.json
+        cp -L ${./package.json} ./package.json
+        ${pkgs.biome}/bin/biome check --error-on-warnings
+        touch $out
+      '';
+
       packages = {
         formatting = treefmtEval.config.build.check self;
         nodeDependencies = generated.nodeDependencies;
         typecheck = typecheck;
+        lintCheck = lintCheck;
         cookie-chromium = cookie-chromium;
         default = cookie-chromium;
       };

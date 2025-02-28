@@ -1,23 +1,23 @@
 {
-	"compilerOptions": {
-		"allowUnreachableCode": false,
-		"allowUnusedLabels": false,
-		"lib": ["ESNext"],
-		"module": "ESNext",
-		"moduleDetection": "force",
-		"moduleResolution": "bundler",
-		"noFallthroughCasesInSwitch": true,
-		"noImplicitOverride": true,
-		"noImplicitReturns": true,
-		"noPropertyAccessFromIndexSignature": true,
-		"noUncheckedIndexedAccess": true,
-		"noUncheckedSideEffectImports": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"useUnknownInCatchVariables": true,
-		"skipLibCheck": true,
-		"strict": true,
-		"target": "ESNext",
-		"verbatimModuleSyntax": true
-	}
+  "compilerOptions": {
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "lib": ["ESNext"],
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUncheckedSideEffectImports": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "useUnknownInCatchVariables": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ESNext",
+    "verbatimModuleSyntax": true
+  }
 }
