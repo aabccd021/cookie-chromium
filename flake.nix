@@ -32,6 +32,16 @@
         nodejs = pkgs.nodejs;
       };
 
+      cookie-chromium = pkgs.writeShellApplication {
+        name = "cookie_browser";
+        runtimeInputs = [ pkgs.nodejs ];
+        runtimeEnv.NODE_PATH = "${generated.nodeDependencies}/lib/node_modules";
+        runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = pkgs.playwright.browsers-chromium;
+        text = ''
+          exec node ${./index.ts} "$@"
+        '';
+      };
+
       updateDependencies = pkgs.writeShellApplication {
         name = "update-dependencies";
         text = ''
@@ -59,9 +69,9 @@
 
       packages = {
         formatting = treefmtEval.config.build.check self;
-        # tailwindcss = tailwindcss;
-        default = generated.package;
         typecheck = typecheck;
+        cookie-chromium = cookie-chromium;
+        default = cookie-chromium;
       };
 
       gcroot = packages // {
