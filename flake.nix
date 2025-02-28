@@ -29,16 +29,15 @@
       generated = import ./generated {
         pkgs = pkgs;
         system = "x86_64-linux";
-        nodejs = pkgs.nodejs;
+        nodejs = pkgs.nodejs_23;
       };
 
       cookie-chromium = pkgs.writeShellApplication {
         name = "cookie-chromium";
-        runtimeInputs = [ pkgs.nodejs ];
         runtimeEnv.NODE_PATH = "${generated.nodeDependencies}/lib/node_modules";
         runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = pkgs.playwright.browsers-chromium;
         text = ''
-          exec node ${./index.ts} "$@"
+          exec ${pkgs.bun}/bin/bun run ${./index.ts} "$@"
         '';
       };
 
@@ -69,6 +68,7 @@
 
       packages = {
         formatting = treefmtEval.config.build.check self;
+        nodeDependencies = generated.nodeDependencies;
         typecheck = typecheck;
         cookie-chromium = cookie-chromium;
         default = cookie-chromium;
