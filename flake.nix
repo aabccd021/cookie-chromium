@@ -43,6 +43,7 @@
 
           ${pkgs.nodejs}/bin/npm install --lockfile-version 2 --package-lock-only
 
+          set -x
           cd generated
           rm -rf node_modules
           ${pkgs.node2nix}/bin/node2nix -- --input ../package.json --lock ../package-lock.json
