@@ -23,7 +23,14 @@
         cookie-chromium = final.writeShellApplication {
           name = "cookie-chromium";
           runtimeEnv.NODE_PATH = "${nodeModules}/node_modules";
-          runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers-chromium;
+          runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers.overrideAttrs {
+            withChromium = false;
+            withFirefox = false;
+            withWebkit = false;
+            withFfmpeg = false;
+            withChromiumHeadlessShell = true;
+          };
+
           text = ''
             exec ${final.bun}/bin/bun run ${./index.ts} "$@"
           '';
