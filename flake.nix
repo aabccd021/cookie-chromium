@@ -24,11 +24,11 @@
           name = "cookie-chromium";
           runtimeEnv.NODE_PATH = "${nodeModules}/node_modules";
           runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers.overrideAttrs {
-            withChromium = false;
+            withChromium = true;
             withFirefox = false;
             withWebkit = false;
             withFfmpeg = false;
-            withChromiumHeadlessShell = true;
+            withChromiumHeadlessShell = false;
           };
 
           text = ''
