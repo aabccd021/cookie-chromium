@@ -3,5 +3,8 @@
   "dependencies": {
     "@types/node": "^22.8.6",
     "playwright": "1.50.1"
+  },
+  "scripts": {
+    "postinstall": "cd $(dirname $npm_package_json) && nix run .#bun2nix -- --output-file bun.nix"
   }
 }

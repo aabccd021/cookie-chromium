@@ -1,48 +1,45 @@
 {
+
   nixConfig.allow-import-from-derivation = false;
+  nixConfig.extra-substituters = [
+    "https://cache.garnix.io"
+    "https://nix-community.cachix.org"
+  ];
+  nixConfig.extra-trusted-public-keys = [
+    "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+  ];
 
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    treefmt-nix.url = "github:numtide/treefmt-nix";
-  };
+  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+  inputs.treefmt-nix.url = "github:numtide/treefmt-nix";
+  inputs.bun2nix.url = "github:baileyluTCD/bun2nix";
 
-  outputs = { self, nixpkgs, treefmt-nix }:
+  outputs = { self, ... }@inputs:
     let
 
-      overlay = (final: prev:
-        let
-          generated = import ./generated {
-            pkgs = final;
-            system = "x86_64-linux";
-            nodejs = final.nodejs;
-          };
-        in
-        {
-          cookie-chromium = final.writeShellApplication {
-            name = "cookie-chromium";
-            runtimeEnv.NODE_PATH = "${generated.nodeDependencies}/lib/node_modules";
-            runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers-chromium;
-            text = ''
-              exec ${final.bun}/bin/bun run ${./index.ts} "$@"
-            '';
-          };
-        });
+      nodeModules = inputs.bun2nix.lib.x86_64-linux.mkBunNodeModules (import ./bun.nix);
 
-      pkgs = import nixpkgs {
+      overlay = (final: prev: {
+        cookie-chromium = final.writeShellApplication {
+          name = "cookie-chromium";
+          runtimeEnv.NODE_PATH = "${nodeModules}/node_modules";
+          runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers-chromium;
+          text = ''
+            exec ${final.bun}/bin/bun run ${./index.ts} "$@"
+          '';
+        };
+      });
+
+      pkgs = import inputs.nixpkgs {
         system = "x86_64-linux";
         overlays = [ overlay ];
       };
 
 
-      generated = import ./generated {
-        pkgs = pkgs;
-        system = "x86_64-linux";
-        nodejs = pkgs.nodejs;
-      };
 
       lib = pkgs.lib;
 
-      treefmtEval = treefmt-nix.lib.evalModule pkgs {
+      treefmtEval = inputs.treefmt-nix.lib.evalModule pkgs {
         projectRootFile = "flake.nix";
         programs.nixpkgs-fmt.enable = true;
         programs.prettier.enable = true;
@@ -52,29 +49,13 @@
         settings.formatter.prettier.priority = 1;
         settings.formatter.biome.priority = 2;
         settings.formatter.shellcheck.options = [ "-s" "sh" ];
-        settings.global.excludes = [ "LICENSE" "generated/**" ];
+        settings.global.excludes = [ "LICENSE" ];
       };
 
 
-      updateDependencies = pkgs.writeShellApplication {
-        name = "update-dependencies";
-        text = ''
-          trap 'cd $(pwd)' EXIT
-          root=$(git rev-parse --show-toplevel)
-          cd "$root" || exit
-          git add -A
-          trap 'git reset >/dev/null' EXIT
-
-          ${pkgs.nodejs}/bin/npm install --lockfile-version 2 --package-lock-only
-
-          rm -rf node_modules
-          cd generated
-          ${pkgs.node2nix}/bin/node2nix -- --input ../package.json --lock ../package-lock.json
-        '';
-      };
 
       typecheck = pkgs.runCommandLocal "cookie_browser_typecheck" { } ''
-        cp -Lr ${generated.nodeDependencies}/lib/node_modules ./node_modules
+        cp -Lr ${nodeModules}/node_modules ./node_modules
         cp -L ${./tsconfig.json} ./tsconfig.json
         cp -L ${./index.ts} ./index.ts
         ${pkgs.typescript}/bin/tsc
@@ -83,7 +64,7 @@
 
       lintCheck = pkgs.runCommandLocal "lintCheck" { } ''
         cp -Lr ${./index.ts} ./index.ts
-        cp -Lr ${generated.nodeDependencies}/lib/node_modules ./node_modules
+        cp -Lr ${nodeModules}/node_modules ./node_modules
         cp -L ${./biome.jsonc} ./biome.jsonc
         cp -L ${./tsconfig.json} ./tsconfig.json
         cp -L ${./package.json} ./package.json
@@ -93,11 +74,11 @@
 
       packages = {
         formatting = treefmtEval.config.build.check self;
-        nodeDependencies = generated.nodeDependencies;
         typecheck = typecheck;
         lintCheck = lintCheck;
         cookie-chromium = pkgs.cookie-chromium;
         default = pkgs.cookie-chromium;
+        bun2nix = inputs.bun2nix.packages.x86_64-linux.default;
       };
 
       gcroot = packages // {
@@ -110,11 +91,6 @@
       checks.x86_64-linux = gcroot;
       formatter.x86_64-linux = treefmtEval.config.build.wrapper;
       overlays.default = overlay;
-
-      apps.x86_64-linux.fix = {
-        type = "app";
-        program = lib.getExe updateDependencies;
-      };
 
       apps.x86_64-linux.default = {
         type = "app";
