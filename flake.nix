@@ -35,8 +35,6 @@
         overlays = [ overlay ];
       };
 
-
-
       lib = pkgs.lib;
 
       treefmtEval = inputs.treefmt-nix.lib.evalModule pkgs {
@@ -51,8 +49,6 @@
         settings.formatter.shellcheck.options = [ "-s" "sh" ];
         settings.global.excludes = [ "LICENSE" ];
       };
-
-
 
       typecheck = pkgs.runCommandLocal "cookie_browser_typecheck" { } ''
         cp -Lr ${nodeModules}/node_modules ./node_modules
