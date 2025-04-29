@@ -83,22 +83,14 @@
         default = pkgs.cookie-chromium;
         bun2nix = inputs.bun2nix.packages.x86_64-linux.default;
       };
-
-      gcroot = packages // {
+    in
+    {
+      packages.x86_64-linux = packages // {
         gcroot = pkgs.linkFarm "gcroot" packages;
       };
 
-    in
-    {
-      packages.x86_64-linux = gcroot;
-      checks.x86_64-linux = gcroot;
+      checks.x86_64-linux = packages;
       formatter.x86_64-linux = treefmtEval.config.build.wrapper;
       overlays.default = overlay;
-
-      apps.x86_64-linux.default = {
-        type = "app";
-        program = lib.getExe packages.default;
-      };
-
     };
 }
