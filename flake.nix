@@ -42,6 +42,8 @@
         settings.global.excludes = [ "LICENSE" ];
       };
 
+      formatter = treefmtEval.config.build.wrapper;
+
       typecheck = pkgs.runCommandLocal "cookie_browser_typecheck" { } ''
         cp -Lr ${nodeModules}/node_modules ./node_modules
         cp -L ${./tsconfig.json} ./tsconfig.json
@@ -60,8 +62,20 @@
         touch $out
       '';
 
-      packages = {
+      devShells.default = pkgs.mkShellNoCC {
+        buildInputs = [
+          pkgs.bun
+          pkgs.biome
+          pkgs.typescript
+          pkgs.vscode-langservers-extracted
+          pkgs.nixd
+          pkgs.typescript-language-server
+        ];
+      };
+
+      packages = devShells // {
         formatting = treefmtEval.config.build.check self;
+        formatter = treefmtEval.config.build.wrapper;
         typecheck = typecheck;
         lintCheck = lintCheck;
         cookie-chromium = pkgs.cookie-chromium;
@@ -75,7 +89,8 @@
       };
 
       checks.x86_64-linux = packages;
-      formatter.x86_64-linux = treefmtEval.config.build.wrapper;
+      formatter.x86_64-linux = formatter;
       overlays.default = overlay;
+      devShells.x86_64-linux = devShells;
     };
 }
