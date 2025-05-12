@@ -17,7 +17,7 @@
           runtimeEnv.NODE_PATH = "${nodeModules}/node_modules";
           runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers-chromium;
           text = ''
-            exec ${final.bun}/bin/bun run ${./index.ts} "$@"
+            exec ${final.lib.getExe final.bun}/bin/bun run ${./index.ts} "$@"
           '';
         };
       });
@@ -48,7 +48,7 @@
         cp -Lr ${nodeModules}/node_modules ./node_modules
         cp -L ${./tsconfig.json} ./tsconfig.json
         cp -L ${./index.ts} ./index.ts
-        ${pkgs.typescript}/bin/tsc
+        ${lib.getExe pkgs.typescript}
         touch "$out"
       '';
 
@@ -58,7 +58,7 @@
         cp -L ${./biome.jsonc} ./biome.jsonc
         cp -L ${./tsconfig.json} ./tsconfig.json
         cp -L ${./package.json} ./package.json
-        ${pkgs.biome}/bin/biome check --error-on-warnings
+        ${lib.getExe pkgs.biome} check --error-on-warnings
         touch $out
       '';
 
@@ -75,7 +75,7 @@
 
       packages = devShells // {
         formatting = treefmtEval.config.build.check self;
-        formatter = treefmtEval.config.build.wrapper;
+        formatter = formatter;
         typecheck = typecheck;
         lintCheck = lintCheck;
         cookie-chromium = pkgs.cookie-chromium;
