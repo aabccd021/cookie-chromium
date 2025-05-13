@@ -17,7 +17,7 @@
           runtimeEnv.NODE_PATH = "${nodeModules}/node_modules";
           runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers-chromium;
           text = ''
-            exec ${final.lib.getExe final.bun}/bin/bun run ${./index.ts} "$@"
+            exec ${final.lib.getExe final.bun} run ${./index.ts} "$@"
           '';
         };
       });
