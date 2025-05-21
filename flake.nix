@@ -6,21 +6,24 @@
   inputs.treefmt-nix.url = "github:numtide/treefmt-nix";
   inputs.bun2nix.url = "github:baileyluTCD/bun2nix";
 
-  outputs = { self, ... }@inputs:
+  outputs =
+    { self, ... }@inputs:
     let
 
       nodeModules = inputs.bun2nix.lib.x86_64-linux.mkBunNodeModules (import ./bun.nix);
 
-      overlay = (final: prev: {
-        cookie-chromium = final.writeShellApplication {
-          name = "cookie-chromium";
-          runtimeEnv.NODE_PATH = "${nodeModules}/node_modules";
-          runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers-chromium;
-          text = ''
-            exec ${final.lib.getExe final.bun} run ${./index.ts} "$@"
-          '';
-        };
-      });
+      overlay = (
+        final: prev: {
+          cookie-chromium = final.writeShellApplication {
+            name = "cookie-chromium";
+            runtimeEnv.NODE_PATH = "${nodeModules}/node_modules";
+            runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers-chromium;
+            text = ''
+              exec ${final.lib.getExe final.bun} run ${./index.ts} "$@"
+            '';
+          };
+        }
+      );
 
       pkgs = import inputs.nixpkgs {
         system = "x86_64-linux";
@@ -31,14 +34,17 @@
 
       treefmtEval = inputs.treefmt-nix.lib.evalModule pkgs {
         projectRootFile = "flake.nix";
-        programs.nixpkgs-fmt.enable = true;
+        programs.nixfmt.enable = true;
         programs.prettier.enable = true;
         programs.biome.enable = true;
         programs.shfmt.enable = true;
         programs.shellcheck.enable = true;
         settings.formatter.prettier.priority = 1;
         settings.formatter.biome.priority = 2;
-        settings.formatter.shellcheck.options = [ "-s" "sh" ];
+        settings.formatter.shellcheck.options = [
+          "-s"
+          "sh"
+        ];
         settings.global.excludes = [ "LICENSE" ];
       };
 
