@@ -9,6 +9,7 @@
   outputs =
     { self, ... }@inputs:
     let
+      lib = inputs.nixpkgs.lib;
 
       collectInputs =
         is:
@@ -41,8 +42,6 @@
         system = "x86_64-linux";
         overlays = [ overlay ];
       };
-
-      lib = pkgs.lib;
 
       treefmtEval = inputs.treefmt-nix.lib.evalModule pkgs {
         projectRootFile = "flake.nix";
