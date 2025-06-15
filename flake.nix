@@ -10,6 +10,18 @@
     { self, ... }@inputs:
     let
 
+      collectInputs =
+        is:
+        pkgs.linkFarm "inputs" (
+          builtins.mapAttrs (
+            name: i:
+            pkgs.linkFarm name {
+              self = i.outPath;
+              deps = collectInputs (lib.attrByPath [ "inputs" ] { } i);
+            }
+          ) is
+        );
+
       nodeModules = inputs.bun2nix.lib.x86_64-linux.mkBunNodeModules (import ./bun.nix);
 
       overlay = (
@@ -82,6 +94,7 @@
       packages = devShells // {
         formatting = treefmtEval.config.build.check self;
         formatter = formatter;
+        allInputs = collectInputs inputs;
         typecheck = typecheck;
         lintCheck = lintCheck;
         cookie-chromium = pkgs.cookie-chromium;
