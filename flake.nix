@@ -23,7 +23,8 @@
           ) is
         );
 
-      nodeModules = inputs.bun2nix.lib.x86_64-linux.mkBunNodeModules (import ./bun.nix);
+      bunNix = import ./bun.nix;
+      nodeModules = inputs.bun2nix.lib.x86_64-linux.mkBunNodeModules { packages = bunNix; };
 
       overlay = (
         final: prev: {
