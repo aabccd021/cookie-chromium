@@ -91,7 +91,16 @@
         ];
       };
 
+      prefmt = pkgs.writeShellApplication {
+        name = "prefmt";
+        runtimeInputs = [ pkgs.biome ];
+        text = ''
+          biome check --fix --unsafe --error-on-warnings
+        '';
+      };
+
       packages = devShells // {
+        prefmt = prefmt;
         formatting = treefmtEval.config.build.check self;
         formatter = formatter;
         allInputs = collectInputs inputs;
