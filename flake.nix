@@ -33,7 +33,7 @@
             runtimeEnv.NODE_PATH = "${nodeModules}/node_modules";
             runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers-chromium;
             text = ''
-              exec ${final.lib.getExe final.bun} run ${./index.ts} "$@"
+              exec ${final.bun}/bin/bun run ${./index.ts} "$@"
             '';
           };
         }
@@ -66,7 +66,7 @@
         cp -Lr ${nodeModules}/node_modules ./node_modules
         cp -L ${./tsconfig.json} ./tsconfig.json
         cp -L ${./index.ts} ./index.ts
-        ${lib.getExe pkgs.typescript}
+        ${pkgs.typescript}/bin/tsc
         touch "$out"
       '';
 
@@ -76,7 +76,7 @@
         cp -L ${./biome.jsonc} ./biome.jsonc
         cp -L ${./tsconfig.json} ./tsconfig.json
         cp -L ${./package.json} ./package.json
-        ${lib.getExe pkgs.biome} check --error-on-warnings
+        ${pkgs.biome}/bin/biome check --error-on-warnings
         touch $out
       '';
 
