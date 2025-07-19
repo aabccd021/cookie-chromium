@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import * as fs from "node:fs";
+import * as os from "node:os";
 import * as util from "node:util";
 import { chromium } from "playwright";
 
@@ -33,13 +33,13 @@ if (neteroState === undefined) {
   throw new Error("NETERO_STATE environment variable is not set.");
 }
 
-const activeBrowser = readFileSync(
+const activeBrowser = fs.readFileSync(
   `${neteroState}/active-browser.txt`,
   "utf-8",
 );
-const activeTab = readFileSync(`${neteroState}/active-tab.txt`, "utf-8");
+const activeTab = fs.readFileSync(`${neteroState}/active-tab.txt`, "utf-8");
 
-const dataDir = tmpdir();
+const dataDir = os.tmpdir();
 
 const preference = {
   browser: {
@@ -54,7 +54,7 @@ const preference = {
   },
 };
 
-writeFileSync(
+fs.writeFileSync(
   `${dataDir}/Default/Preferences`,
   JSON.stringify(preference, null, 2),
 );
@@ -65,7 +65,7 @@ const browser = await chromium.launchPersistentContext(dataDir, {
   colorScheme: theme,
 });
 
-const cookiesStr = readFileSync(
+const cookiesStr = fs.readFileSync(
   `${neteroState}/browser/${activeBrowser}/cookie.txt`,
   "utf-8",
 );
@@ -95,7 +95,7 @@ for (const line of cookiesStr.split("\n")) {
 
 const emptyPages = browser.pages();
 
-const url = readFileSync(
+const url = fs.readFileSync(
   `${neteroState}/browser/${activeBrowser}/tab/${activeTab}/url.txt`,
   "utf-8",
 );
