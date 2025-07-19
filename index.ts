@@ -54,6 +54,8 @@ const preference = {
   },
 };
 
+fs.mkdirSync(`${dataDir}/Default`, { recursive: true });
+
 fs.writeFileSync(
   `${dataDir}/Default/Preferences`,
   JSON.stringify(preference, null, 2),
@@ -103,3 +105,10 @@ const newPage = await browser.newPage();
 await newPage.goto(url);
 
 await Promise.all(emptyPages.map((page) => page.close()));
+
+while (true) {
+  const mess = await fs.promises.readFile("/tmp/netero/browser.fifo", "utf-8");
+  if (mess === "reload_all") {
+    await Promise.all(browser.pages().map((page) => page.reload()));
+  }
+}
