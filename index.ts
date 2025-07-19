@@ -3,17 +3,6 @@ import { tmpdir } from "node:os";
 import * as util from "node:util";
 import { chromium } from "playwright";
 
-const neteroState = process.env["NETERO_STATE"];
-if (neteroState === undefined) {
-  throw new Error("NETERO_STATE environment variable is not set.");
-}
-
-const activeBrowser = readFileSync(
-  `${neteroState}/active-browser.txt`,
-  "utf-8",
-);
-const activeTab = readFileSync(`${neteroState}/active-tab.txt`, "utf-8");
-
 let theme: "light" | "dark" | undefined;
 
 const { values: args } = util.parseArgs({
@@ -38,6 +27,17 @@ if (
     `Invalid theme: ${args.theme}. Must be "light", "dark", or undefined.`,
   );
 }
+
+const neteroState = process.env["NETERO_STATE"];
+if (neteroState === undefined) {
+  throw new Error("NETERO_STATE environment variable is not set.");
+}
+
+const activeBrowser = readFileSync(
+  `${neteroState}/active-browser.txt`,
+  "utf-8",
+);
+const activeTab = readFileSync(`${neteroState}/active-tab.txt`, "utf-8");
 
 const dataDir = tmpdir();
 
@@ -66,7 +66,7 @@ const browser = await chromium.launchPersistentContext(dataDir, {
 });
 
 const cookiesStr = readFileSync(
-  `${neteroState}/browser${activeBrowser}/cookies.txt`,
+  `${neteroState}/browser/${activeBrowser}/cookie.txt`,
   "utf-8",
 );
 
@@ -96,7 +96,7 @@ for (const line of cookiesStr.split("\n")) {
 const emptyPages = browser.pages();
 
 const url = readFileSync(
-  `${neteroState}/browser${activeBrowser}/tabs/${activeTab}/url.txt`,
+  `${neteroState}/browser/${activeBrowser}/tab/${activeTab}/url.txt`,
   "utf-8",
 );
 const newPage = await browser.newPage();
