@@ -67,6 +67,10 @@ const browser = await chromium.launchPersistentContext(dataDir, {
   colorScheme: theme,
 });
 
+browser.on("close", () => {
+  process.exit(0);
+});
+
 const cookiesStr = fs.readFileSync(
   `${neteroState}/browser/${activeBrowser}/cookie.txt`,
   "utf-8",
@@ -106,39 +110,9 @@ await newPage.goto(url);
 
 await Promise.all(emptyPages.map((page) => page.close()));
 
-type Signal =
-  | {
-      readonly shouldContinue: false;
-    }
-  | {
-      readonly shouldContinue: true;
-      readonly message: string;
-    };
-
-const signalReceived = new Promise<Signal>((resolve) => {
-  const signal: Signal = { shouldContinue: false };
-  process.on("SIGINT", () => {
-    resolve(signal);
-  });
-  process.on("SIGTERM", () => {
-    resolve(signal);
-  });
-});
-
-async function readFifo(): Promise<Signal> {
-  const message = await fs.promises.readFile(
-    "/tmp/netero/browser.fifo",
-    "utf-8",
-  );
-  return { shouldContinue: true, message };
-}
-
 while (true) {
-  const signal = await Promise.any([signalReceived, readFifo()]);
-  if (!signal.shouldContinue) {
-    break;
-  }
-  if (signal.message === "reload_all") {
+  const mess = await fs.promises.readFile("/tmp/netero/browser.fifo", "utf-8");
+  if (mess === "reload_all") {
     await Promise.all(browser.pages().map((page) => page.reload()));
   }
 }
