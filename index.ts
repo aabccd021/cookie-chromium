@@ -59,8 +59,6 @@ writeFileSync(
   JSON.stringify(preference, null, 2),
 );
 
-console.log(readFileSync(`${dataDir}/Default/Preferences`, "utf-8"));
-
 const browser = await chromium.launchPersistentContext(dataDir, {
   viewport: null,
   headless: false,
