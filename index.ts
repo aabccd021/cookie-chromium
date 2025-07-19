@@ -44,7 +44,7 @@ const dataDir = tmpdir();
 const preference = {
   browser: {
     theme: {
-      color_scheme2: theme === "dark" ? "2" : "1",
+      color_scheme2: theme === "dark" ? 2 : 1,
     },
   },
   devtools: {
@@ -58,6 +58,8 @@ writeFileSync(
   `${dataDir}/Default/Preferences`,
   JSON.stringify(preference, null, 2),
 );
+
+console.log(readFileSync(`${dataDir}/Default/Preferences`, "utf-8"));
 
 const browser = await chromium.launchPersistentContext(dataDir, {
   viewport: null,
