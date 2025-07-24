@@ -65,6 +65,7 @@ const browser = await chromium.launchPersistentContext(dataDir, {
   viewport: null,
   headless: false,
   colorScheme: theme,
+  ignoreDefaultArgs: ["--enable-automation"],
 });
 
 browser.on("close", () => {
