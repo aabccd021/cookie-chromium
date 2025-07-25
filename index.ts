@@ -111,16 +111,9 @@ await newPage.goto(url);
 
 await Promise.all(emptyPages.map((page) => page.close()));
 
-let debounceTimeout: NodeJS.Timeout | undefined;
-
 while (true) {
   const mess = await fs.promises.readFile("/tmp/netero/browser.fifo", "utf-8");
   if (mess === "reload_all") {
-    if (debounceTimeout !== undefined) {
-      clearTimeout(debounceTimeout);
-    }
-    debounceTimeout = setTimeout(async () => {
-      await Promise.all(browser.pages().map((page) => page.reload()));
-    }, 500);
+    await Promise.all(browser.pages().map((page) => page.reload()));
   }
 }
