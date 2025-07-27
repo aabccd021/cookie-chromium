@@ -23,8 +23,9 @@
           ) is
         );
 
-      bunNix = import ./bun.nix;
-      nodeModules = inputs.bun2nix.lib.x86_64-linux.mkBunNodeModules { packages = bunNix; };
+      nodeModules = inputs.bun2nix.lib.x86_64-linux.mkBunNodeModules {
+        packages = import ./bun.nix;
+      };
 
       overlay = (
         final: prev: {
@@ -36,6 +37,10 @@
               exec ${final.bun}/bin/bun run ${./index.ts} "$@"
             '';
           };
+
+          cookie-chromium-node-modules = nodeModules;
+
+          cookie-chromium-playwright = final.playwright.browsers-chromium;
         }
       );
 
