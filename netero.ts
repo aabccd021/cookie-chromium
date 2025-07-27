@@ -1,7 +1,8 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as util from "node:util";
-import { chromium, type Locator, type Page } from "playwright";
+import { chromium } from "playwright";
+import { type Config, handleAction } from "./action";
 
 let theme: "light" | "dark" | undefined;
 
@@ -9,6 +10,12 @@ const { values: args } = util.parseArgs({
   args: process.argv.slice(2),
   options: {
     theme: {
+      type: "string",
+    },
+    config: {
+      type: "string",
+    },
+    scenario: {
       type: "string",
     },
   },
@@ -28,6 +35,14 @@ if (
   );
 }
 
+if (args.config === undefined) {
+  throw new Error("No actions provided. Use --config to specify them.");
+}
+
+if (args.scenario === undefined) {
+  throw new Error("No scenario provided. Use --scenario to specify it.");
+}
+
 const neteroState = process.env["NETERO_STATE"];
 if (neteroState === undefined) {
   throw new Error("NETERO_STATE environment variable is not set.");
@@ -37,7 +52,7 @@ const activeBrowser = fs.readFileSync(
   `${neteroState}/active-browser.txt`,
   "utf-8",
 );
-const activeTab = fs.readFileSync(`${neteroState}/active-tab.txt`, "utf-8");
+const _activeTab = fs.readFileSync(`${neteroState}/active-tab.txt`, "utf-8");
 
 const dataDir = os.tmpdir();
 
@@ -63,7 +78,6 @@ fs.writeFileSync(
 
 const browser = await chromium.launchPersistentContext(dataDir, {
   viewport: null,
-  headless: false,
   colorScheme: theme,
   ignoreDefaultArgs: ["--enable-automation"],
 });
@@ -100,200 +114,20 @@ for (const line of cookiesStr.split("\n")) {
   ]);
 }
 
-const emptyPages = browser.pages();
-
-const url = fs.readFileSync(
-  `${neteroState}/browser/${activeBrowser}/tab/${activeTab}/url.txt`,
-  "utf-8",
-);
 const newPage = await browser.newPage();
-await newPage.goto(url);
 
-await Promise.all(emptyPages.map((page) => page.close()));
+const configStr = fs.readFileSync(args.config, "utf-8");
+const config: Config = JSON.parse(configStr);
 
-while (true) {
-  const mess = await fs.promises.readFile("/tmp/netero/browser.fifo", "utf-8");
-  if (mess === "reload_all") {
-    await Promise.all(browser.pages().map((page) => page.reload()));
-  }
+const scenario = config.scenarios[args.scenario];
+if (scenario === undefined) {
+  throw new Error(`Scenario "${args.scenario}" not found in config.`);
 }
 
-type ElementValue =
-  | {
-      type: "attribute";
-      name: string;
-    }
-  | {
-      type: "text";
-    };
-
-type PageValue =
-  | {
-      type: "url";
-    }
-  | {
-      type: "title";
-    };
-
-type Value =
-  | {
-      source: "page";
-      value: PageValue;
-    }
-  | {
-      source: "element";
-      xpath: string;
-      value: ElementValue;
-    };
-
-type Actions =
-  | {
-      action: "goto";
-      url: string;
-    }
-  | {
-      action: "click";
-      xpath: string;
-    }
-  | {
-      action: "fill";
-      xpath: string;
-      value: string;
-    }
-  | {
-      action: "check";
-      xpath: string;
-    }
-  | {
-      action: "selectOption";
-      xpath: string;
-      value: string | string[];
-    }
-  | {
-      action: "setInputFile";
-      xpath: string;
-      value: string | string[];
-    }
-  | {
-      action: "assert";
-      expected: string;
-      value: Value;
-    };
-// | {
-//     action: "submit";
-//     formSelector?: string;
-//     submitButtonSelector?: string;
-//     data: Record<string, FormInput & { selector?: string }>;
-//   }
-
-function getElementValue(
-  element: Locator,
-  value: ElementValue,
-): Promise<string | null> {
-  if (value.type === "attribute") {
-    return element.getAttribute(value.name);
+for (const step of scenario.steps) {
+  const action = config.steps[step];
+  if (action === undefined) {
+    throw new Error(`Action "${step}" not found in config.`);
   }
-  if (value.type === "text") {
-    return element.textContent();
-  }
-  value satisfies never;
-  throw new Error(`Unknown element value type: ${JSON.stringify(value)}`);
-}
-
-async function getPageValue(
-  page: Page,
-  value: PageValue,
-): Promise<string | null> {
-  if (value.type === "url") {
-    return page.url();
-  }
-
-  if (value.type === "title") {
-    return page.title();
-  }
-
-  value satisfies never;
-  throw new Error(`Unknown page value type: ${JSON.stringify(value)}`);
-}
-
-function getValue(page: Page, value: Value): Promise<string | null> {
-  if (value.source === "page") {
-    return getPageValue(page, value.value);
-  }
-
-  if (value.source === "element") {
-    const locator = page.locator(value.xpath);
-    return getElementValue(locator, value.value);
-  }
-
-  value satisfies never;
-  throw new Error(`Unknown value source: ${JSON.stringify(value)}`);
-}
-
-export async function handleAction(page: Page, action: Actions): Promise<void> {
-  if (action.action === "goto") {
-    await page.goto(action.url);
-    return;
-  }
-
-  if (action.action === "click") {
-    await page.locator(action.xpath).click();
-    return;
-  }
-
-  if (action.action === "fill") {
-    await page.locator(action.xpath).fill(action.value);
-    return;
-  }
-
-  if (action.action === "check") {
-    await page.locator(action.xpath).check();
-    return;
-  }
-
-  if (action.action === "selectOption") {
-    await page.locator(action.xpath).selectOption(action.value);
-    return;
-  }
-
-  if (action.action === "setInputFile") {
-    await page.locator(action.xpath).setInputFiles(action.value);
-    return;
-  }
-
-  // if (action.action === "goto-link") {
-  //   await page.locator(`a[${action.xpath}"]`).click();
-  //   return;
-  // }
-
-  // if (action.action === "submit") {
-  //   const form = page.locator(action.formSelector ?? "form");
-  //   for (const [name, value] of Object.entries(action.data)) {
-  //     const input =
-  //       value.selector !== undefined
-  //         ? page.locator(value.selector)
-  //         : form.locator(`input[name="${name}"]`);
-  //     await handleInput(input, value);
-  //   }
-  //   const submitButton = action.submitButtonSelector
-  //     ? page.locator(action.submitButtonSelector)
-  //     : form.locator("button[type='submit'], action.action='submit']");
-  //
-  //   await submitButton.click();
-  //   return;
-  // }
-
-  if (action.action === "assert") {
-    const value = await getValue(page, action.value);
-    if (value === null) {
-      throw new Error("Value is null");
-    }
-    const regex = new RegExp(action.expected);
-    if (!regex.test(value)) {
-      throw new Error(`Expected ${value} to match ${action.expected}`);
-    }
-    return;
-  }
-
-  action satisfies never;
+  await handleAction(neteroState, newPage, action);
 }

@@ -38,9 +38,14 @@
             '';
           };
 
-          cookie-chromium-node-modules = nodeModules;
-
-          cookie-chromium-playwright = final.playwright.browsers-chromium;
+          test-chromium = final.writeShellApplication {
+            name = "test-chromium";
+            runtimeEnv.NODE_PATH = "${nodeModules}/node_modules";
+            runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers-chromium;
+            text = ''
+              exec ${final.bun}/bin/bun run ${./netero.ts} "$@"
+            '';
+          };
         }
       );
 
