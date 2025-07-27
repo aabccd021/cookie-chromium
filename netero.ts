@@ -167,6 +167,13 @@ type Actions =
       xpath: string;
       attribute: string;
       expectedRegex: string;
+      options?: Parameters<Locator["getAttribute"]>[1];
+    }
+  | {
+      action: "assert-text";
+      xpath: string;
+      expectedRegex: string;
+      options?: Parameters<Locator["textContent"]>[0];
     };
 
 async function handleInput(element: Locator, data: FormData): Promise<void> {
@@ -231,7 +238,10 @@ async function _handleAction(page: Page, action: Actions): Promise<void> {
 
   if (action.action === "assert-attribute") {
     const element = page.locator(action.xpath);
-    const attributeValue = await element.getAttribute(action.attribute);
+    const attributeValue = await element.getAttribute(
+      action.attribute,
+      action.options,
+    );
     if (attributeValue === null) {
       throw new Error(
         `Element at ${action.xpath} does not have attribute ${action.attribute}`,
@@ -241,6 +251,21 @@ async function _handleAction(page: Page, action: Actions): Promise<void> {
     if (!regex.test(attributeValue)) {
       throw new Error(
         `Expected attribute ${action.attribute} to match ${action.expectedRegex}, but got ${attributeValue}`,
+      );
+    }
+    return;
+  }
+
+  if (action.action === "assert-text") {
+    const element = page.locator(action.xpath);
+    const textContent = await element.textContent(action.options);
+    if (textContent === null) {
+      throw new Error(`Element at ${action.xpath} has no text content`);
+    }
+    const regex = new RegExp(action.expectedRegex);
+    if (!regex.test(textContent)) {
+      throw new Error(
+        `Expected text content to match ${action.expectedRegex}, but got ${textContent}`,
       );
     }
     return;
