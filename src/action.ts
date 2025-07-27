@@ -7,6 +7,10 @@ export type FormInput =
       value: string;
     }
   | {
+      type: "radio";
+      value: string;
+    }
+  | {
       type: "checkbox";
       checked: boolean;
     };
@@ -18,7 +22,7 @@ export type Action =
     }
   | {
       action: "goto";
-      href: string;
+      xpath: string;
     }
   | {
       action: "submit";
@@ -55,12 +59,31 @@ export type Config = {
   scenarios: Record<string, Scenario>;
 };
 
-function handleInput(element: Locator, input: FormInput): Promise<void> {
+async function handleInput(
+  form: Locator,
+  name: string,
+  input: FormInput,
+): Promise<void> {
   if (input.type === "text") {
-    return element.fill(input.value);
+    const element = form.locator(`//input[@name='${name}']`);
+    await element.fill(input.value);
+    return;
   }
   if (input.type === "checkbox") {
-    return input.checked ? element.check() : element.uncheck();
+    const element = form.locator(`//input[@name='${name}']`);
+    if (input.checked) {
+      await element.check();
+    } else {
+      await element.uncheck();
+    }
+    return;
+  }
+  if (input.type === "radio") {
+    const element = form.locator(
+      `//input[@name='${name}' and @value='${input.value}']`,
+    );
+    await element.check();
+    return;
   }
   input satisfies never;
   throw new Error(`Unknown input type: ${JSON.stringify(input)}`);
@@ -77,15 +100,14 @@ export async function handleAction(
   }
 
   if (action.action === "goto") {
-    await page.locator(action.href).click();
+    await page.locator(action.xpath).click();
     return;
   }
 
   if (action.action === "submit") {
     const form = page.locator("//form");
     for (const [name, input] of Object.entries(action.data ?? {})) {
-      const element = form.locator(`//input[@name='${name}']`);
-      await handleInput(element, input);
+      await handleInput(form, name, input);
     }
     const submitButton =
       action.button !== undefined

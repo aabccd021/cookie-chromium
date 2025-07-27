@@ -10,6 +10,9 @@
   },
   "linter": {
     "rules": {
+      "suspicious": {
+        "noConsole": "warn"
+      },
       "complexity": {
         "useLiteralKeys": "off"
       }
