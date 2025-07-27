@@ -241,14 +241,17 @@ export async function handleAction(page: Page, action: Actions): Promise<void> {
     await page.locator(action.xpath).fill(action.value);
     return;
   }
+
   if (action.action === "check") {
     await page.locator(action.xpath).check();
     return;
   }
+
   if (action.action === "selectOption") {
     await page.locator(action.xpath).selectOption(action.value);
     return;
   }
+
   if (action.action === "setInputFile") {
     await page.locator(action.xpath).setInputFiles(action.value);
     return;
