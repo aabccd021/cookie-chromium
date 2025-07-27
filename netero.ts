@@ -118,165 +118,173 @@ while (true) {
   }
 }
 
-type InputFill = {
-  type: "fill";
-  value: Parameters<Locator["fill"]>[0];
-} & Parameters<Locator["fill"]>[1];
+type ElementValue =
+  | {
+      type: "attribute";
+      name: string;
+    }
+  | {
+      type: "text";
+    };
 
-type InputCheck = {
-  type: "check";
-} & Parameters<Locator["check"]>[0];
+type PageValue =
+  | {
+      value: "url";
+    }
+  | {
+      value: "title";
+    };
 
-type InputSelect = {
-  type: "select";
-  value: Parameters<Locator["selectOption"]>[0];
-} & Parameters<Locator["selectOption"]>[1];
-
-type InputFile = {
-  type: "file";
-  value: Parameters<Locator["setInputFiles"]>[0];
-} & Parameters<Locator["setInputFiles"]>[1];
-
-type FormData = InputFill | InputCheck | InputSelect | InputFile;
-
-type InputSelector = {
-  selector?: string;
-};
+type Value =
+  | {
+      source: "page";
+      value: PageValue;
+    }
+  | {
+      source: "element";
+      xpath: string;
+      value: ElementValue;
+    };
 
 type Actions =
   | {
-      action: "goto-url";
+      action: "goto";
       url: string;
     }
   | {
-      action: "goto-link";
+      action: "click";
       xpath: string;
     }
   | {
-      action: "submit";
-      formSelector?: string;
-      submitButtonSelector?: string;
-      data: Record<string, FormData & InputSelector>;
-    }
-  | {
-      action: "assert-url";
-      url: string;
-    }
-  | {
-      action: "assert-attribute";
+      action: "fill";
       xpath: string;
-      attribute: string;
+      value: string;
+    }
+  | {
+      action: "check";
+      xpath: string;
+    }
+  | {
+      action: "selectOption";
+      xpath: string;
+      value: string | string[];
+    }
+  | {
+      action: "setInputFile";
+      xpath: string;
+      value: string | string[];
+    }
+  // | {
+  //     action: "submit";
+  //     formSelector?: string;
+  //     submitButtonSelector?: string;
+  //     data: Record<string, FormInput & { selector?: string }>;
+  //   }
+  | {
+      action: "assert";
       expected: string;
-      options?: Parameters<Locator["getAttribute"]>[1];
-    }
-  | {
-      action: "assert-text";
-      xpath: string;
-      expected: string;
-      options?: Parameters<Locator["textContent"]>[0];
+      value: Value;
     };
 
-async function handleInput(element: Locator, data: FormData): Promise<void> {
-  if (data.type === "fill") {
-    const { type: _type, value, ...options } = data;
-    await element.fill(value, options);
-    return;
+function getElementValue(
+  element: Locator,
+  value: ElementValue,
+): Promise<string | null> {
+  if (value.type === "attribute") {
+    return element.getAttribute(value.name);
   }
-  if (data.type === "check") {
-    const { type: _type, ...options } = data;
-    await element.check(options);
-    return;
+  if (value.type === "text") {
+    return element.textContent();
   }
-  if (data.type === "select") {
-    const { type: _type, value, ...options } = data;
-    await element.selectOption(value, options);
-    return;
-  }
-  if (data.type === "file") {
-    const { type: _type, value, ...options } = data;
-    await element.setInputFiles(value, options);
-    return;
-  }
-  data satisfies never;
+  value satisfies never;
+  throw new Error(`Unknown element value type: ${JSON.stringify(value)}`);
 }
 
-function assertRegex(
-  xpath: string,
-  value: string | null,
-  expected: string,
-  errorMessage: string,
-): void {
-  if (value === null) {
-    throw new Error(`Element at ${xpath} has no text content`);
+async function getPageValue(
+  page: Page,
+  value: PageValue,
+): Promise<string | null> {
+  if (value.value === "url") {
+    return page.url();
   }
-  const regex = new RegExp(expected);
-  if (!regex.test(value)) {
-    throw new Error(
-      `Expected value at ${xpath} to match ${expected}, but got ${value}. ${errorMessage}`,
-    );
+  if (value.value === "title") {
+    return page.title();
   }
+  value satisfies never;
+  throw new Error(`Unknown page value type: ${JSON.stringify(value)}`);
 }
 
-async function _handleAction(page: Page, action: Actions): Promise<void> {
-  if (action.action === "goto-url") {
+function getValue(page: Page, value: Value): Promise<string | null> {
+  if (value.source === "page") {
+    return getPageValue(page, value.value);
+  }
+  if (value.source === "element") {
+    const locator = page.locator(value.xpath);
+    return getElementValue(locator, value.value);
+  }
+  value satisfies never;
+  throw new Error(`Unknown value source: ${JSON.stringify(value)}`);
+}
+
+export async function handleAction(page: Page, action: Actions): Promise<void> {
+  if (action.action === "goto") {
     await page.goto(action.url);
     return;
   }
 
-  if (action.action === "goto-link") {
-    await page.locator(`a[${action.xpath}"]`).click();
+  if (action.action === "click") {
+    await page.locator(action.xpath).click();
     return;
   }
 
-  if (action.action === "submit") {
-    const form = page.locator(action.formSelector ?? "form");
-    for (const [name, value] of Object.entries(action.data)) {
-      const input =
-        value.selector !== undefined
-          ? page.locator(value.selector)
-          : form.locator(`input[name="${name}"]`);
-      await handleInput(input, value);
+  if (action.action === "fill") {
+    await page.locator(action.xpath).fill(action.value);
+    return;
+  }
+  if (action.action === "check") {
+    await page.locator(action.xpath).check();
+    return;
+  }
+  if (action.action === "selectOption") {
+    await page.locator(action.xpath).selectOption(action.value);
+    return;
+  }
+  if (action.action === "setInputFile") {
+    await page.locator(action.xpath).setInputFiles(action.value);
+    return;
+  }
+
+  // if (action.action === "goto-link") {
+  //   await page.locator(`a[${action.xpath}"]`).click();
+  //   return;
+  // }
+
+  // if (action.action === "submit") {
+  //   const form = page.locator(action.formSelector ?? "form");
+  //   for (const [name, value] of Object.entries(action.data)) {
+  //     const input =
+  //       value.selector !== undefined
+  //         ? page.locator(value.selector)
+  //         : form.locator(`input[name="${name}"]`);
+  //     await handleInput(input, value);
+  //   }
+  //   const submitButton = action.submitButtonSelector
+  //     ? page.locator(action.submitButtonSelector)
+  //     : form.locator("button[type='submit'], action.action='submit']");
+  //
+  //   await submitButton.click();
+  //   return;
+  // }
+
+  if (action.action === "assert") {
+    const value = await getValue(page, action.value);
+    if (value === null) {
+      throw new Error("Value is null");
     }
-    const submitButton = action.submitButtonSelector
-      ? page.locator(action.submitButtonSelector)
-      : form.locator("button[type='submit'], input[type='submit']");
-
-    await submitButton.click();
-    return;
-  }
-
-  if (action.action === "assert-url") {
-    const currentUrl = page.url();
-    if (currentUrl !== action.url) {
-      throw new Error(`Expected URL ${action.url}, but got ${currentUrl}`);
+    const regex = new RegExp(action.expected);
+    if (!regex.test(value)) {
+      throw new Error(`Expected ${value} to match ${action.expected}`);
     }
-    return;
-  }
-
-  if (action.action === "assert-attribute") {
-    const element = page.locator(action.xpath);
-    const attributeValue = await element.getAttribute(
-      action.attribute,
-      action.options,
-    );
-    assertRegex(
-      action.xpath,
-      attributeValue,
-      action.expected,
-      `Expected attribute ${action.attribute} to match ${action.expected}, but got ${attributeValue}`,
-    );
-    return;
-  }
-
-  if (action.action === "assert-text") {
-    const element = page.locator(action.xpath);
-    const textContent = await element.textContent(action.options);
-    assertRegex(
-      action.xpath,
-      textContent,
-      action.expected,
-      `Expected text content to match ${action.expected}, but got ${textContent}`,
-    );
     return;
   }
 
