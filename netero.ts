@@ -207,9 +207,11 @@ async function getPageValue(
   if (value.value === "url") {
     return page.url();
   }
+
   if (value.value === "title") {
     return page.title();
   }
+
   value satisfies never;
   throw new Error(`Unknown page value type: ${JSON.stringify(value)}`);
 }
@@ -218,10 +220,12 @@ function getValue(page: Page, value: Value): Promise<string | null> {
   if (value.source === "page") {
     return getPageValue(page, value.value);
   }
+
   if (value.source === "element") {
     const locator = page.locator(value.xpath);
     return getElementValue(locator, value.value);
   }
+
   value satisfies never;
   throw new Error(`Unknown value source: ${JSON.stringify(value)}`);
 }
