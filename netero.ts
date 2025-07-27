@@ -166,13 +166,13 @@ type Actions =
       action: "assert-attribute";
       xpath: string;
       attribute: string;
-      expectedRegex: string;
+      expected: string;
       options?: Parameters<Locator["getAttribute"]>[1];
     }
   | {
       action: "assert-text";
       xpath: string;
-      expectedRegex: string;
+      expected: string;
       options?: Parameters<Locator["textContent"]>[0];
     };
 
@@ -203,16 +203,16 @@ async function handleInput(element: Locator, data: FormData): Promise<void> {
 function assertRegex(
   xpath: string,
   value: string | null,
-  expectedRegex: string,
+  expected: string,
   errorMessage: string,
 ): void {
   if (value === null) {
     throw new Error(`Element at ${xpath} has no text content`);
   }
-  const regex = new RegExp(expectedRegex);
+  const regex = new RegExp(expected);
   if (!regex.test(value)) {
     throw new Error(
-      `Expected value at ${xpath} to match ${expectedRegex}, but got ${value}. ${errorMessage}`,
+      `Expected value at ${xpath} to match ${expected}, but got ${value}. ${errorMessage}`,
     );
   }
 }
@@ -262,8 +262,8 @@ async function _handleAction(page: Page, action: Actions): Promise<void> {
     assertRegex(
       action.xpath,
       attributeValue,
-      action.expectedRegex,
-      `Expected attribute ${action.attribute} to match ${action.expectedRegex}, but got ${attributeValue}`,
+      action.expected,
+      `Expected attribute ${action.attribute} to match ${action.expected}, but got ${attributeValue}`,
     );
     return;
   }
@@ -274,8 +274,8 @@ async function _handleAction(page: Page, action: Actions): Promise<void> {
     assertRegex(
       action.xpath,
       textContent,
-      action.expectedRegex,
-      `Expected text content to match ${action.expectedRegex}, but got ${textContent}`,
+      action.expected,
+      `Expected text content to match ${action.expected}, but got ${textContent}`,
     );
     return;
   }
