@@ -200,6 +200,23 @@ async function handleInput(element: Locator, data: FormData): Promise<void> {
   data satisfies never;
 }
 
+function assertRegex(
+  xpath: string,
+  value: string | null,
+  expectedRegex: string,
+  errorMessage: string,
+): void {
+  if (value === null) {
+    throw new Error(`Element at ${xpath} has no text content`);
+  }
+  const regex = new RegExp(expectedRegex);
+  if (!regex.test(value)) {
+    throw new Error(
+      `Expected value at ${xpath} to match ${expectedRegex}, but got ${value}. ${errorMessage}`,
+    );
+  }
+}
+
 async function _handleAction(page: Page, action: Actions): Promise<void> {
   if (action.action === "goto-url") {
     await page.goto(action.url);
@@ -242,32 +259,24 @@ async function _handleAction(page: Page, action: Actions): Promise<void> {
       action.attribute,
       action.options,
     );
-    if (attributeValue === null) {
-      throw new Error(
-        `Element at ${action.xpath} does not have attribute ${action.attribute}`,
-      );
-    }
-    const regex = new RegExp(action.expectedRegex);
-    if (!regex.test(attributeValue)) {
-      throw new Error(
-        `Expected attribute ${action.attribute} to match ${action.expectedRegex}, but got ${attributeValue}`,
-      );
-    }
+    assertRegex(
+      action.xpath,
+      attributeValue,
+      action.expectedRegex,
+      `Expected attribute ${action.attribute} to match ${action.expectedRegex}, but got ${attributeValue}`,
+    );
     return;
   }
 
   if (action.action === "assert-text") {
     const element = page.locator(action.xpath);
     const textContent = await element.textContent(action.options);
-    if (textContent === null) {
-      throw new Error(`Element at ${action.xpath} has no text content`);
-    }
-    const regex = new RegExp(action.expectedRegex);
-    if (!regex.test(textContent)) {
-      throw new Error(
-        `Expected text content to match ${action.expectedRegex}, but got ${textContent}`,
-      );
-    }
+    assertRegex(
+      action.xpath,
+      textContent,
+      action.expectedRegex,
+      `Expected text content to match ${action.expectedRegex}, but got ${textContent}`,
+    );
     return;
   }
 
