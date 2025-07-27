@@ -129,10 +129,10 @@ type ElementValue =
 
 type PageValue =
   | {
-      value: "url";
+      type: "url";
     }
   | {
-      value: "title";
+      type: "title";
     };
 
 type Value =
@@ -174,17 +174,17 @@ type Actions =
       xpath: string;
       value: string | string[];
     }
-  // | {
-  //     action: "submit";
-  //     formSelector?: string;
-  //     submitButtonSelector?: string;
-  //     data: Record<string, FormInput & { selector?: string }>;
-  //   }
   | {
       action: "assert";
       expected: string;
       value: Value;
     };
+// | {
+//     action: "submit";
+//     formSelector?: string;
+//     submitButtonSelector?: string;
+//     data: Record<string, FormInput & { selector?: string }>;
+//   }
 
 function getElementValue(
   element: Locator,
@@ -204,11 +204,11 @@ async function getPageValue(
   page: Page,
   value: PageValue,
 ): Promise<string | null> {
-  if (value.value === "url") {
+  if (value.type === "url") {
     return page.url();
   }
 
-  if (value.value === "title") {
+  if (value.type === "title") {
     return page.title();
   }
 
