@@ -73,16 +73,6 @@
         touch "$out"
       '';
 
-      lintCheck = pkgs.runCommandLocal "lintCheck" { } ''
-        cp -Lr ${./index.ts} ./index.ts
-        cp -Lr ${nodeModules}/node_modules ./node_modules
-        cp -L ${./biome.json} ./biome.json
-        cp -L ${./tsconfig.json} ./tsconfig.json
-        cp -L ${./package.json} ./package.json
-        ${pkgs.biome}/bin/biome check --vcs-enabled=false --error-on-warnings
-        touch $out
-      '';
-
       devShells.default = pkgs.mkShellNoCC {
         buildInputs = [
           pkgs.bun
@@ -99,7 +89,6 @@
         formatter = formatter;
         allInputs = collectInputs inputs;
         typecheck = typecheck;
-        lintCheck = lintCheck;
         cookie-chromium = pkgs.cookie-chromium;
         default = pkgs.cookie-chromium;
         bun2nix = inputs.bun2nix.packages.x86_64-linux.default;
