@@ -51,10 +51,11 @@
         programs.nixfmt.enable = true;
         programs.prettier.enable = true;
         programs.biome.enable = true;
+        programs.biome.settings = builtins.fromJSON (builtins.readFile ./biome.json);
+        programs.biome.formatUnsafe = true;
+        settings.formatter.biome.options = [ "--vcs-enabled=false" ];
         programs.shfmt.enable = true;
         programs.shellcheck.enable = true;
-        settings.formatter.prettier.priority = 1;
-        settings.formatter.biome.priority = 2;
         settings.formatter.shellcheck.options = [
           "-s"
           "sh"
@@ -75,10 +76,10 @@
       lintCheck = pkgs.runCommandLocal "lintCheck" { } ''
         cp -Lr ${./index.ts} ./index.ts
         cp -Lr ${nodeModules}/node_modules ./node_modules
-        cp -L ${./biome.jsonc} ./biome.jsonc
+        cp -L ${./biome.json} ./biome.json
         cp -L ${./tsconfig.json} ./tsconfig.json
         cp -L ${./package.json} ./package.json
-        ${pkgs.biome}/bin/biome check --error-on-warnings
+        ${pkgs.biome}/bin/biome check --vcs-enabled=false --error-on-warnings
         touch $out
       '';
 
@@ -97,7 +98,7 @@
         name = "prefmt";
         runtimeInputs = [ pkgs.biome ];
         text = ''
-          biome check --fix --unsafe --error-on-warnings
+          biome check --vcs-enabled=false --fix --unsafe --error-on-warnings
         '';
       };
 
