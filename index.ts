@@ -33,12 +33,6 @@ if (neteroState === undefined) {
   throw new Error("NETERO_STATE environment variable is not set.");
 }
 
-const activeBrowser = fs.readFileSync(
-  `${neteroState}/active-browser.txt`,
-  "utf-8",
-);
-const activeTab = fs.readFileSync(`${neteroState}/active-tab.txt`, "utf-8");
-
 const dataDir = os.tmpdir();
 
 const preference = {
@@ -72,10 +66,7 @@ browser.on("close", () => {
   process.exit(0);
 });
 
-const cookiesStr = fs.readFileSync(
-  `${neteroState}/browser/${activeBrowser}/cookie.txt`,
-  "utf-8",
-);
+const cookiesStr = fs.readFileSync(`${neteroState}/cookie.txt`, "utf-8");
 
 for (const line of cookiesStr.split("\n")) {
   const lineIsComment = line.startsWith("#") && !line.startsWith("#HttpOnly_");
@@ -102,10 +93,7 @@ for (const line of cookiesStr.split("\n")) {
 
 const emptyPages = browser.pages();
 
-const url = fs.readFileSync(
-  `${neteroState}/browser/${activeBrowser}/tab/${activeTab}/url.txt`,
-  "utf-8",
-);
+const url = fs.readFileSync(`${neteroState}/url.txt`, "utf-8");
 const newPage = await browser.newPage();
 await newPage.goto(url);
 
