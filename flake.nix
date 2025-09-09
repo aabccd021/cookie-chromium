@@ -4,7 +4,6 @@
 
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   inputs.treefmt-nix.url = "github:numtide/treefmt-nix";
-  inputs.bun2nix.url = "github:baileyluTCD/bun2nix";
 
   outputs =
     { self, ... }@inputs:
@@ -23,15 +22,16 @@
           ) is
         );
 
-      nodeModules = inputs.bun2nix.lib.x86_64-linux.mkBunNodeModules {
-        packages = import ./bun.nix;
-      };
-
       overlay = (
-        final: prev: {
+        final: prev:
+        let
+          npm_deps = import ./npm_deps.nix { pkgs = final; };
+        in
+        {
+
           cookie-chromium = final.writeShellApplication {
             name = "cookie-chromium";
-            runtimeEnv.NODE_PATH = "${nodeModules}/node_modules";
+            runtimeEnv.NODE_PATH = "${npm_deps}/lib/node_modules";
             runtimeEnv.PLAYWRIGHT_BROWSERS_PATH = final.playwright.browsers-chromium;
             text = ''
               exec ${final.bun}/bin/bun run ${./index.ts} "$@"
@@ -65,8 +65,19 @@
 
       formatter = treefmtEval.config.build.wrapper;
 
+      npm_deps = import ./npm_deps.nix { pkgs = pkgs; };
+
+      update-npm-deps = pkgs.writeShellApplication {
+        name = "update-npm-deps";
+        text = ''
+          repo_root=$(git rev-parse --show-toplevel)
+          nix run github:aabccd021/bun3nix install playwright@1.54.1 @types/node \
+            > "$repo_root/npm_deps.nix"
+        '';
+      };
+
       typecheck = pkgs.runCommandLocal "cookie_browser_typecheck" { } ''
-        cp -Lr ${nodeModules}/node_modules ./node_modules
+        cp -Lr ${npm_deps}/lib/node_modules ./node_modules
         cp -L ${./tsconfig.json} ./tsconfig.json
         cp -L ${./index.ts} ./index.ts
         ${pkgs.typescript}/bin/tsc
@@ -91,7 +102,7 @@
         typecheck = typecheck;
         cookie-chromium = pkgs.cookie-chromium;
         default = pkgs.cookie-chromium;
-        bun2nix = inputs.bun2nix.packages.x86_64-linux.default;
+        update-npm-deps = update-npm-deps;
       };
     in
     {
